@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Radia - Interactive Experience</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'script': ['Dancing Script', 'cursive'],
+                        'sans': ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        'gift-primary': '#ff4757',
+                        'gift-ribbon': '#feca57',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: radial-gradient(circle at center, #2b1055 0%, #050b14 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .bg-shapes {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .floating-shape {
+            position: absolute;
+            background: linear-gradient(45deg, rgba(255,107,129,0.2), rgba(112,161,255,0.2));
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(110vh) rotate(0deg) scale(1); }
+            50% { transform: translateY(50vh) rotate(180deg) scale(1.2); }
+            100% { transform: translateY(-10vh) rotate(360deg) scale(1); }
+        }
+
+        #gift-wrapper {
+            position: absolute;
+            z-index: 20;
+            transition: opacity 0.5s ease-out, transform 0.8s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .gift-box-container {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(45deg);
+            transition: transform 0.5s ease;
+            cursor: pointer;
+        }
+
+        .gift-box-container:hover {
+            transform: rotateX(-20deg) rotateY(45deg) scale(1.05);
+            animation: shake 1s infinite alternate;
+        }
+
+        @keyframes shake {
+            0% { transform: rotateX(-20deg) rotateY(45deg) translateY(0); }
+            100% { transform: rotateX(-20deg) rotateY(45deg) translateY(-10px); }
+        }
+
+        /* Common face styles */
+        .face {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #ff4757;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        /* The ribbon on the faces */
+        .face::after {
+            content: '';
+            position: absolute;
+            background: #feca57;
+        }
+
+        /* Box Body */
+        .box-body {
+            position: absolute;
+            width: 150px; height: 150px;
+            transform-style: preserve-3d;
+        }
+        .box-body .face { width: 150px; height: 150px; }
+        .box-body .front  { transform: translateZ(75px); background: #ff6b81; }
+        .box-body .back   { transform: rotateY(180deg) translateZ(75px); background: #ff4757; }
+        .box-body .right  { transform: rotateY(90deg) translateZ(75px); background: #ff4757; }
+        .box-body .left   { transform: rotateY(-90deg) translateZ(75px); background: #ff6b81; }
+        .box-body .bottom { transform: rotateX(-90deg) translateZ(75px); background: #c0392b; }
+
+        /* Vertical ribbons on body */
+        .box-body .front::after, .box-body .back::after, 
+        .box-body .left::after, .box-body .right::after {
+            width: 30px; height: 100%; top: 0; left: 60px;
+        }
+        
+        /* Box Lid */
+        .box-lid {
+            position: absolute;
+            width: 160px; height: 40px;
+            top: -5px; left: -5px;
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+            transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s;
+        }
+        .box-lid .face { background: #ff6b81; }
+        .box-lid .front  { width: 160px; height: 40px; transform: translateZ(80px); }
+        .box-lid .back   { width: 160px; height: 40px; transform: rotateY(180deg) translateZ(80px); }
+        .box-lid .right  { width: 160px; height: 40px; transform: rotateY(90deg) translateZ(80px); }
+        .box-lid .left   { width: 160px; height: 40px; transform: rotateY(-90deg) translateZ(80px); }
+        .box-lid .top    { width: 160px; height: 160px; transform: rotateX(90deg) translateZ(20px); background: #ff4757; }
+
+        /* Ribbons on lid sides */
+        .box-lid .front::after, .box-lid .back::after, 
+        .box-lid .left::after, .box-lid .right::after {
+            width: 30px; height: 100%; top: 0; left: 65px;
+        }
+        
+        /* Cross ribbon on lid top */
+        .box-lid .top::before, .box-lid .top::after {
+            content: ''; position: absolute; background: #feca57;
+        }
+        .box-lid .top::before { width: 30px; height: 100%; top: 0; left: 65px; }
+        .box-lid .top::after { width: 100%; height: 30px; top: 65px; left: 0; }
+
+        /* Open state */
+        .is-open .box-lid {
+            transform: translateY(-150px) rotateX(45deg) rotateY(45deg) rotateZ(30deg);
+            opacity: 0;
+        }
+        .is-open .gift-box-container {
+            animation: none;
+        }
+
+        /* Card Container Styles */
+        #card-container {
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-origin: center;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Carousel Styles */
+        .carousel-track-container {
+            overflow: hidden;
+            border-radius: 0.75rem;
+            position: relative;
+            aspect-ratio: 4 / 5;
+            min-height: 18rem;
+        }
+        .carousel-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            width: 100%;
+            height: 100%;
+        }
+        .carousel-slide {
+            min-width: 100%;
+            position: relative;
+            height: 100%;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        @media (max-width: 767px) {
+            body {
+                align-items: flex-start;
+                padding: 1rem 0;
+            }
+
+            #gift-wrapper {
+                gap: 1.25rem;
+                top: 50vh;
+                transform: translateY(-50%);
+            }
+
+            .gift-box-container {
+                transform: scale(0.78) rotateX(-20deg) rotateY(45deg);
+            }
+
+            .gift-box-container:hover {
+                transform: scale(0.82) rotateX(-20deg) rotateY(45deg);
+            }
+
+            #card-container {
+                position: relative;
+                width: calc(100% - 1rem);
+                margin: 0.5rem auto;
+                gap: 1rem;
+            }
+
+            #card-container > .glass-panel:first-child {
+                padding: 1.5rem;
+            }
+
+            #card-container h1:first-child {
+                font-size: 3rem;
+                line-height: 1;
+            }
+
+            #card-container h1:nth-child(2) {
+                font-size: 4rem;
+                line-height: 1;
+                margin-bottom: 1.5rem;
+            }
+
+            #card-container .space-y-4 {
+                font-size: 1rem;
+                line-height: 1.5rem;
+            }
+
+            .carousel-track-container {
+                aspect-ratio: 4 / 5;
+                min-height: 0;
+                height: min(70vh, 28rem);
+            }
+        }
+    </style>
+</head>
+<body class="text-white font-sans antialiased">
+
+    <div class="bg-shapes" id="shapes-container">
+        <!-- Generated via JS for randomness -->
+    </div>
+
+    <div id="gift-wrapper">
+        <h2 class="text-3xl font-script text-pink-300 animate-pulse tracking-wider">Tap to Open!</h2>
+        
+        <div class="gift-box-container" id="gift-box" onclick="openGift()">
+            <!-- Bottom / Body of the box -->
+            <div class="box-body">
+                <div class="face front"></div>
+                <div class="face back"></div>
+                <div class="face right"></div>
+                <div class="face left"></div>
+                <div class="face bottom"></div>
+            </div>
+            
+            <!-- Top / Lid of the box -->
+            <div class="box-lid" id="box-lid">
+                <div class="face front"></div>
+                <div class="face back"></div>
+                <div class="face right"></div>
+                <div class="face left"></div>
+                <div class="face top"></div>
+            </div>
+        </div>
+    </div>
+
+    <main id="card-container" class="absolute z-30 w-11/12 max-w-4xl opacity-0 scale-0 pointer-events-none flex flex-col md:flex-row gap-6">
+        
+        <!-- Left Side: Message -->
+        <div class="glass-panel p-8 md:p-12 rounded-3xl flex-1 flex flex-col justify-center relative overflow-hidden">
+            <!-- Decorative gradient orb -->
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+            
+            <div class="relative z-10 text-center md:text-left">
+                <h1 class="font-script text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 mb-2">
+                    Happy Birthday,
+                </h1>
+                <h1 class="font-script text-6xl md:text-8xl font-bold text-white drop-shadow-lg mb-8">
+                    Radia!
+                </h1>
+
+                <div class="space-y-4 text-gray-200 text-lg leading-relaxed font-light">
+                    <p>
+                        Today is all about you! Wishing you a day filled with incredible moments, laughter, and all the love you bring into the world.
+                    </p>
+                    <p>
+                        May this next chapter of your life be filled with beautiful adventures, stunning successes, and dreams that turn into reality. Keep shining your brilliant light!
+                    </p>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-white/20">
+                    <p class="text-sm text-gray-400 uppercase tracking-widest mb-1">With so much love,</p>
+                    <p class="font-script text-4xl text-pink-300">Your Friends</p>
+                </div>
+                
+                <button onclick="fireConfetti()" class="mt-8 px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/30 rounded-full transition-all duration-300 flex items-center gap-2 mx-auto md:mx-0">
+                    <span>🎉</span> Pop More Confetti!
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Side: Interactive Carousel -->
+        <div class="glass-panel p-4 md:p-6 rounded-3xl w-full md:w-5/12 flex flex-col">
+            <h3 class="text-xl font-semibold mb-4 text-center text-pink-200">Beautiful Memories</h3>
+            
+            <div class="carousel-track-container flex-1 bg-black/20 relative group">
+                <div class="carousel-track h-full" id="track">
+                    <!-- Slide 1 -->
+                    <div class="carousel-slide flex-shrink-0 w-full h-full">
+                        <img src="Screenshot_20260207_182042_WhatsApp.jpg" alt="A birthday memory of Radia" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity">
+                    </div>
+                    <!-- Slide 2 -->
+                    <div class="carousel-slide flex-shrink-0 w-full h-full">
+                        <img src="Screenshot_20260322_133631_WhatsApp.jpg" alt="A special memory of Radia" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity">
+                    </div>
+                    <!-- Slide 3 -->
+                    <div class="carousel-slide flex-shrink-0 w-full h-full">
+                        <img src="Screenshot_20260915_000635_WhatsApp.jpg" alt="Radia smiling on a video call" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity">
+                    </div>
+                    <!-- Slide 4 -->
+                    <div class="carousel-slide flex-shrink-0 w-full h-full">
+                        <img src="Screenshot_20260915_001656_Photos.jpg" alt="Radia smiling for a portrait" class="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity">
+                    </div>
+                    <!-- Slide 5 -->
+                    <div class="carousel-slide flex-shrink-0 w-full h-full bg-black">
+                        <video autoplay muted playsinline preload="auto" class="w-full h-full object-contain" aria-label="A birthday video for Radia">
+                            <source src="Snapchat-631763885.mp4" type="video/mp4">
+                            Your browser does not support video playback.
+                        </video>
+                    </div>
+                </div>
+
+                <!-- Carousel Controls -->
+                <button onclick="moveCarousel(-1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur-sm">
+                    &#10094;
+                </button>
+                <button onclick="moveCarousel(1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 backdrop-blur-sm">
+                    &#10095;
+                </button>
+            </div>
+            
+            <div class="flex justify-center gap-2 mt-4" id="carousel-dots">
+                <!-- Dots generated by JS -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 1. Generate Background Floating Shapes
+        const shapesContainer = document.getElementById('shapes-container');
+        for (let i = 0; i < 15; i++) {
+            const shape = document.createElement('div');
+            shape.classList.add('floating-shape');
+            
+            // Random properties
+            const size = Math.random() * 60 + 20; // 20px to 80px
+            const left = Math.random() * 100; // 0% to 100%
+            const duration = Math.random() * 15 + 15; // 15s to 30s
+            const delay = Math.random() * -30; // Negative delay to start immediately at different phases
+
+            shape.style.width = `${size}px`;
+            shape.style.height = `${size}px`;
+            shape.style.left = `${left}%`;
+            shape.style.animationDuration = `${duration}s`;
+            shape.style.animationDelay = `${delay}s`;
+
+            shapesContainer.appendChild(shape);
+        }
+
+        // 2. Confetti Logic
+        function fireConfetti() {
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff4757', '#feca57', '#ff6b81', '#70a1ff', '#2ed573']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff4757', '#feca57', '#ff6b81', '#70a1ff', '#2ed573']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        function fireBigExplosion() {
+            confetti({
+                particleCount: 200,
+                spread: 160,
+                origin: { y: 0.6 },
+                colors: ['#ff4757', '#feca57', '#ff6b81', '#70a1ff', '#2ed573', '#ffffff']
+            });
+        }
+
+        // 3. Gift Box Interaction
+        let giftOpened = false;
+        function openGift() {
+            if (giftOpened) return;
+            giftOpened = true;
+
+            const giftWrapper = document.getElementById('gift-wrapper');
+            const giftBox = document.getElementById('gift-box');
+            const cardContainer = document.getElementById('card-container');
+
+            // Trigger open animation on box
+            giftBox.classList.add('is-open');
+            
+            // Big confetti pop
+            setTimeout(() => {
+                fireBigExplosion();
+                fireConfetti();
+            }, 300);
+
+            // Fade out box, bring in card
+            setTimeout(() => {
+                giftWrapper.style.transform = 'scale(0.5)';
+                giftWrapper.style.opacity = '0';
+                
+                setTimeout(() => {
+                    giftWrapper.style.display = 'none';
+                    
+                    // Show Card
+                    cardContainer.classList.remove('opacity-0', 'scale-0', 'pointer-events-none');
+                    cardContainer.classList.add('opacity-100', 'scale-100');
+                }, 500);
+            }, 1000);
+        }
+
+        // 4. Carousel Logic
+        let currentSlide = 0;
+        const track = document.getElementById('track');
+        const slides = document.querySelectorAll('.carousel-slide');
+        const totalSlides = slides.length;
+        const dotsContainer = document.getElementById('carousel-dots');
+
+        // Initialize dots
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('button');
+            dot.classList.add('w-2', 'h-2', 'rounded-full', 'transition-all', 'duration-300');
+            if (i === 0) {
+                dot.classList.add('bg-pink-400', 'w-4'); // Active dot
+            } else {
+                dot.classList.add('bg-white/30');
+            }
+            dot.onclick = () => goToSlide(i);
+            dotsContainer.appendChild(dot);
+        }
+
+        function updateCarousel() {
+            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // Update dots
+            const dots = dotsContainer.children;
+            for (let i = 0; i < dots.length; i++) {
+                if (i === currentSlide) {
+                    dots[i].className = 'w-4 h-2 rounded-full transition-all duration-300 bg-pink-400';
+                } else {
+                    dots[i].className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white/30 hover:bg-white/50';
+                }
+            }
+        }
+
+        function moveCarousel(direction) {
+            currentSlide = (currentSlide + direction + totalSlides) % totalSlides;
+            updateCarousel();
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateCarousel();
+        }
+
+        // Optional: Auto-play carousel
+        setInterval(() => {
+            if (giftOpened) {
+                moveCarousel(1);
+            }
+        }, 5000);
+
+    </script>
+</body>
+</html>
